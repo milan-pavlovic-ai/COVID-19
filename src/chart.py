@@ -14,10 +14,12 @@ class Chart:
     """
     Represents figure and style of chart
     """
-    def __init__(self, title, xlabel, bgcolor, style, stable):
+
+    def __init__(self, title, xlabel, ratio, bgcolor, style, stable):
         # Labels and style
         self.title = title
         self.xlabel = xlabel
+        self.ratio = ratio
         self.bgcolor = bgcolor
         self.style = style
 
@@ -53,6 +55,15 @@ class Chart:
         self.axes.set_xlim(xmin=xmin, xmax=xmax)
         return
 
+    def set_ylim(self, ymin, ymax):
+        """
+        Set limits for Y-axis
+        """
+        self.ymin = ymin
+        self.ymax = ymax
+        self.axes.set_ylim(ymin=ymin, ymax=ymax)
+        return
+
     def clear(self):
         """
         Clear the current axes 
@@ -62,6 +73,8 @@ class Chart:
         self.axes.set_xlabel(self.xlabel)
         if (not self.xmin is None) and (not self.xmax is None):
             self.set_xlim(self.xmin, self.xmax)
+        if (not self.ymin is None) and (not self.ymax is None):
+            self.set_ylim(self.ymin, self.ymax)
 
     def display(self, to_save, filename):
         """
@@ -90,12 +103,10 @@ class BarhChart(Chart):
     """
     Represents figure and style of horizontal bar chart
     """
+
     def __init__(self, title, xlabel, ratio, bar_color, stable):
-        super().__init__(title, xlabel, 'white', 'seaborn-darkgrid', stable)
-        self.ratio = ratio
+        super().__init__(title, xlabel, ratio, 'white', 'seaborn-darkgrid', stable)
         self.bar_color = bar_color
-
-
 
     def draw_img(self, data, target_col):
         """
@@ -108,7 +119,7 @@ class BarhChart(Chart):
 
         # Add date
         day = DataMgr.date_to_str(data.index[0])
-        self.axes.text(0.95, 1.01, day, horizontalalignment='right', transform=self.axes.transAxes, fontsize=12)
+        self.axes.text(0.95, 1.01, day, horizontalalignment='right', transform=self.axes.transAxes, fontsize=14)
 
         # Add value for each bar
         for bar in bars:
@@ -138,7 +149,7 @@ class BarhChart(Chart):
 
         # Add date
         day_str = DataMgr.date_to_str(day)
-        self.axes.text(0.95, 1.01, day_str, horizontalalignment='right', transform=self.axes.transAxes, fontsize=12)
+        self.axes.text(0.95, 1.01, day_str, horizontalalignment='right', transform=self.axes.transAxes, fontsize=14)
 
         # Add value for each bar
         for bar in bars:
@@ -153,18 +164,33 @@ class MapChart(Chart):
     """
     Represents figure and style of map chart
     """
-    def __init__(self, title, xlabel, stable):
-        super().__init__(title, xlabel, 'darkgrey', 'seaborn-deep', stable)
+
+    def __init__(self, title, xlabel, ratio, stable):
+        super().__init__(title, xlabel, ratio, 'darkgrey', 'seaborn-deep', stable)
         self.cmap = None
         self.norm = None
         self.bounds = None
+        self.globalmin = None
+        self.globalmax = None
+        self.limit = 0.03
 
     def setup_axes(self):
         """
         Setup axes
         """
-        #self.axes.set_aspect('equal')
+        self.axes.set_aspect('equal')
         self.axes.set_axis_off()
+        self.set_xlim(18.5, 23.5)       # based on geographical coordinates
+        self.set_ylim(41.5, 47)
+        return
+
+    def set_extremes(self, minval, maxval):
+        """
+        Set global minimum and maximum
+        """
+        self.globalmin = minval
+        self.globalmax = maxval
+        return
 
     def get_color(self, val):
         """
@@ -177,7 +203,8 @@ class MapChart(Chart):
         Create color map
         """
         self.cmap = mpl.colors.ListedColormap(['lightblue', 'dodgerblue', 'lightgreen', 'green', 'yellow', 'orange', 'red', 'darkred', 'indigo'])
-        self.bounds = np.linspace(0, maxval, self.cmap.N+1)
+        bounds = np.linspace(0, maxval, self.cmap.N+1)
+        self.bounds = bounds if self.ratio else [int(x) for x in bounds]
         self.norm = mpl.colors.BoundaryNorm(self.bounds, self.cmap.N)
         return
 
@@ -185,9 +212,10 @@ class MapChart(Chart):
         """
         Create color bar
         """
-        cb_axes = self.fig.add_axes([0.75, 0.1, 0.025, 0.75])
+        cb_axes = self.fig.add_axes([0.7, 0.15, 0.025, 0.65])
+        num_format = '%.2f' if self.ratio else '%d'
         cb = mpl.colorbar.ColorbarBase(cb_axes, cmap=self.cmap, norm=self.norm, ticks=self.bounds, boundaries=self.bounds, 
-            spacing='proportional', orientation='vertical', format='%.2f', drawedges=False)
+            spacing='proportional', orientation='vertical', format=num_format, drawedges=False)
         cb.outline.set_visible(False)
         cb.set_label(self.xlabel)
         return
@@ -205,9 +233,13 @@ class MapChart(Chart):
         """
         Plotting bar chart at geographic coordinates of cities/municipalities
         """
+        # Calculate parameters
         color = self.get_color(val)
         val_norm = DataMgr.normalize(val, min_city, max_city)
-        val_norm_auto = self.norm(val)
+        if self.stable:
+            val_norm = DataMgr.normalize(val, self.globalmin, self.globalmax)
+
+        # Drawing    
         self.axes.bar(x=x, bottom=y, height=val_norm, width=0.1, lw=0.3, color=color, edgecolor='black', align='center', alpha=0.9)
         self.axes.plot([x-0.07, x+0.07], [y, y], ls='-', lw=0.5, color='black', alpha=0.9)
         self.axes.text(x, y-0.061, name, ha='center', color='black', fontsize=8, alpha=0.9)
@@ -217,10 +249,15 @@ class MapChart(Chart):
         """
         Plotting all cities/municipalities from data on given axes
         """
+        # Add date
+        day_str = DataMgr.date_to_str(data.index[0])
+        self.axes.text(0.8, 0.85, day_str, horizontalalignment='right', transform=self.axes.transAxes, fontsize=14)
+
+        # Make vertical bar plot for each city
         max_city = data[target_col].max()
         min_city = data[target_col].min()
         for day, city in data.iterrows():
-            if city[target_col] / max_city > 0.03:
+            if city[target_col] / max_city > self.limit:
                 self.city_bar_plot(x=city[DataMgr.LONGITUDE], 
                                     y=city[DataMgr.LATITUDE], 
                                     val=city[target_col], 
@@ -237,7 +274,7 @@ class MapChart(Chart):
             self.anim.event_source.stop()
             return
 
-        # Clean old objects
+        # Fresh figure setup
         self.clear()
         self.setup_axes()
         self.draw_map()
@@ -251,13 +288,13 @@ class MapChart(Chart):
 
         # Add date
         day_str = DataMgr.date_to_str(day)
-        self.axes.text(0.95, 1.01, day_str, horizontalalignment='right', transform=self.axes.transAxes, fontsize=12)
+        self.axes.text(0.8, 0.85, day_str, horizontalalignment='right', transform=self.axes.transAxes, fontsize=14)
 
         # Make vertical bar plot for each city
         max_city = data[target_col].max()
         min_city = data[target_col].min()
         for day, city in data.iterrows():
-            if city[target_col] / max_city > 0.03:
+            if city[target_col] / max_city > self.limit:
                 self.city_bar_plot(x=city[DataMgr.LONGITUDE], 
                                     y=city[DataMgr.LATITUDE], 
                                     val=city[target_col], 
@@ -265,6 +302,7 @@ class MapChart(Chart):
                                     min_city=min_city,
                                     max_city=max_city)
 
+        # Add color bar
         self.create_cbar()
         return
 
@@ -273,5 +311,5 @@ if __name__ == "__main__":
     barchart = BarhChart('Title', 'Xlabel', False, 'red', True)
     barchart.display(False, 'barchart')
 
-    mapchart = MapChart('Title', 'Xlabel', True)
+    mapchart = MapChart('Title', 'Xlabel', False, True)
     mapchart.display(False, 'mapchart')

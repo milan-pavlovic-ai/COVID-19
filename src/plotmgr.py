@@ -48,22 +48,12 @@ class PlotMgr:
                                                 repeat=False)
             self.chart.anim = the_anim
         else:
-            '''days = target_data.sort_index().loc[:pd.Timestamp(day)]
+            # Setting data for choosen day
+            days = target_data.sort_index().loc[:pd.Timestamp(day)]
             the_day = days.tail(1).index if len(days) > 0 else target_data.sort_index().head(1).index
             target_data = target_data.loc[the_day]
-            print(target_data)
-            self.chart.draw_img(target_data, target_col)'''
-
-            days = target_data.sort_index().groupby(DataMgr.DATE).head(1).index
-            max_val = target_data[target_col].max()
-            for the_day in days:
-                data = target_data.loc[the_day]
-                print(data)
-                self.chart = BarhChart(title, xlabel, ratio, bar_color, stable)
-                if stable:
-                    self.chart.set_xlim(0, max_val)
-                self.chart.draw_img(data, target_col)
-                self.chart.display(save, plot_name)
+            # Drawing
+            self.chart.draw_img(target_data, target_col)
 
         self.chart.display(save, plot_name)
         return
@@ -184,7 +174,7 @@ class PlotMgr:
         return 
 
 
-    def map_bar_plot(self, top, target_col, anim, day, title, xlabel, stable, plot_name, save):
+    def map_bar_plot(self, top, target_col, anim, day, title, xlabel, ratio, stable, plot_name, save):
         """
         General function for plotting map of Serbia with a bar chart for each city/municipality
         """
@@ -193,51 +183,40 @@ class PlotMgr:
         target_data = target_data.sort_values(target_col, ascending=True).groupby(DataMgr.DATE).tail(top)
 
         # Create chart
-        self.chart = MapChart(title, xlabel, stable)
+        self.chart = MapChart(title, xlabel, ratio, stable)
         self.chart.setup_axes()
         if stable:
+            minval = target_data[target_col].min()
             maxval = target_data[target_col].max()
+            self.chart.set_extremes(minval, maxval)
             self.chart.create_cmap(maxval)
 
         # Draw plot
         if anim:
             target_data = target_data.groupby(DataMgr.DATE)
-            day = list(target_data.groups.keys())[0]
-            if not stable:
-                maxval = target_data.get_group(day)[target_col].max()
-                self.chart.create_cmap(maxval)
             print(target_data)
             the_anim = animation.FuncAnimation(self.chart.fig, 
                                                 self.chart.draw_anim,
                                                 fargs=(target_data, target_col, stable),
-                                                init_func=self.chart.draw_map,  
+                                                #init_func=self.chart.draw_map,  
                                                 frames=len(target_data), 
                                                 interval=1000, 
                                                 blit=False, 
                                                 repeat=False)
             self.chart.anim = the_anim
         else:
+            # Setting data for choosen day
             days = target_data.sort_index().loc[:pd.Timestamp(day)]
             the_day = days.tail(1).index if len(days) > 0 else target_data.sort_index().head(1).index
             target_data = target_data.loc[the_day]
             if not stable:
                 maxval = target_data[target_col].max()
                 self.chart.create_cmap(maxval)
+            # Drawing
             self.chart.draw_map()
             self.chart.draw_img(target_data, target_col)
+            self.chart.create_cbar()
 
-            '''days = target_data.sort_index().groupby(DataMgr.DATE).head(1).index
-            for the_day in days:
-                self.dataplot = target_data.loc[the_day]
-                print(self.dataplot)
-                self.chart = PlotMgr.Chart(title, xlabel, bar_color, ratio, stable)
-                if stable:
-                    max_val = target_data[self.target_col].max()
-                    self.chart.axes.set_xlim(xmax=max_val)
-                self.draw_barh_plot()
-                PlotMgr.display(save, plot_name)'''
-
-        self.chart.create_cbar()
         self.chart.display(save, plot_name)
         return
 
@@ -257,6 +236,7 @@ class PlotMgr:
                         day=day,
                         title=DataMgr.TITLE_INFECTED,
                         xlabel=DataMgr.XLABEL_INFECTED,
+                        ratio=False,
                         stable=stable,
                         plot_name='Infected Map Plot',
                         save=save)
@@ -278,6 +258,7 @@ class PlotMgr:
                         day=day,
                         title=DataMgr.TITLE_RATIO_INFECTED,
                         xlabel=DataMgr.XLABEL_RATIO_INFECTED,
+                        ratio=True,
                         stable=stable,
                         plot_name='Infected-ratio Map Plot',
                         save=save)
@@ -299,6 +280,7 @@ class PlotMgr:
                         day=day,
                         title=DataMgr.TITLE_ISOLATED,
                         xlabel=DataMgr.XLABEL_ISOLATED,
+                        ratio=False,
                         stable=stable,
                         plot_name='Isolated Map Plot',
                         save=save)
@@ -320,6 +302,7 @@ class PlotMgr:
                         day=day,
                         title=DataMgr.TITLE_RATIO_ISOLATED,
                         xlabel=DataMgr.XLABEL_RATIO_ISOLATED,
+                        ratio=True,
                         stable=stable,
                         plot_name='Isolated-ratio Map Plot',
                         save=save)
@@ -327,21 +310,28 @@ class PlotMgr:
 
 
 def main():
-    
+
     pltmgr = PlotMgr()
 
+    # Parameters
+    top = 20
+    anim = True
+    day = '2021-03-28'
+    stable = True
+    save = False
+
     # Bars
-    #pltmgr.infected_barh_plot(top=20, anim=True, day='2020-03-28', stable=True, save=False)
-    '''pltmgr.ratio_infected_barh_plot(top=20, anim=False, day='2020-03-26', stable=True, save=False)
-    pltmgr.isolated_barh_plot(top=20, anim=False, day='2020-03-06', stable=True, save=False)
-    pltmgr.ratio_isolated_barh_plot(top=20, anim=False, day='2020-03-26', stable=True, save=False)
-    pltmgr.infected_isolated_barh_plot(top=20, anim=False, day='2020-03-06', stable=True, save=False)'''
+    pltmgr.infected_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    pltmgr.ratio_infected_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    pltmgr.isolated_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    pltmgr.ratio_isolated_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    pltmgr.infected_isolated_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
 
     # Maps
-    pltmgr.infected_map_plot(top=20, anim=True, day='2020-03-28', stable=True, save=False)
-    '''pltmgr.ratio_infected_map_plot(top=20, anim=False, day='2020-03-28', stable=False, save=False)
-    pltmgr.infected_map_plot(top=20, anim=False, day='2020-03-28', stable=False, save=False)
-    pltmgr.ratio_isolated_map_plot(top=20, anim=False, day='2020-03-28', stable=False, save=False)'''
+    pltmgr.infected_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    pltmgr.ratio_infected_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    pltmgr.isolated_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    pltmgr.ratio_isolated_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
 
 
 if __name__ == "__main__": 
