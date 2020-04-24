@@ -5,12 +5,15 @@ cligj==0.5.0
 cycler==0.10.0
 cyrtranslit==0.4
 descartes==1.1.0
+ffmpeg==1.4
 Fiona==1.8.13.post1
 geopandas==0.7.0
 kiwisolver==1.2.0
 matplotlib==3.2.1
+missingno==0.4.2
 munch==2.5.0
 numpy==1.18.2
+opencv-python==4.2.0.34
 pandas==1.0.3
 pyparsing==2.4.7
 pyproj==2.6.0

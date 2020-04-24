@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from configparser import ConfigParser
 
 
-class DataMgr:
+class DataMngr:
     """
     Loading and building data
     """
@@ -21,6 +21,7 @@ class DataMgr:
     DATAIN_DIR = os.path.join(ROOT_DIR, 'data/input')
     OUTPUT_DIR = os.path.join(ROOT_DIR, 'data/output')
     MAP_DIR = os.path.join(ROOT_DIR, 'data/map')
+    LOGO_DIR = os.path.join(ROOT_DIR, 'data/logo')
 
     # Parameters
     url_config = os.path.join(CONFIG_DIR, 'config.ini')
@@ -29,14 +30,25 @@ class DataMgr:
 
     PARAM = 'param'
     LANG = config.get(PARAM, 'LANG')
-    WIDTH = int(config.get(PARAM, 'WIDTH'))
-    HEIGHT = int(config.get(PARAM, 'HEIGHT'))
-    DPI = int(config.get(PARAM, 'DPI'))
+    LOGO_SIZE = int(config.get(PARAM, 'LOGO_SIZE'))
+
+    WIDTH_BARH = int(config.get(PARAM, 'WIDTH_BARH'))
+    HEIGHT_BARH = int(config.get(PARAM, 'HEIGHT_BARH'))
+    DPI_BARH = int(config.get(PARAM, 'DPI_BARH'))
+    DAY_FRAMES_BARH = int(config.get(PARAM, 'DAY_FRAMES_BARH'))
+    INTERVAL_BARH = int(config.get(PARAM, 'INTERVAL_BARH'))
+
+    WIDTH_MAP = int(config.get(PARAM, 'WIDTH_MAP'))
+    HEIGHT_MAP = int(config.get(PARAM, 'HEIGHT_MAP'))
+    DPI_MAP = int(config.get(PARAM, 'DPI_MAP'))
+    DAY_FRAMES_MAP = int(config.get(PARAM, 'DAY_FRAMES_MAP'))
+    INTERVAL_MAP = int(config.get(PARAM, 'INTERVAL_MAP'))
 
     FILE = 'file'
     GEO_FILENAME = config.get(FILE, 'GEO_FILENAME')
     POPUL_FILENAME = config.get(FILE, 'POPUL_FILENAME')
     MAP_FILENAME = config.get(FILE, 'MAP_FILENAME')
+    LOGO_FILENAME = config.get(FILE, 'LOGO_FILENAME')
 
     # Labels
     lang_url = os.path.join(CONFIG_DIR, 'lang.ini')
@@ -67,9 +79,14 @@ class DataMgr:
     TITLE_INFECTED_ISOLATED = labels.get(LANG, 'TITLE_INFECTED_ISOLATED')
     XLABEL_INFECTED_ISOLATED = labels.get(LANG, 'XLABEL_INFECTED_ISOLATED')
 
-    # Cleaning
+    # Cleaning keywords
     PREFIX = 'Град '
     INVALID_WORDS = ['област', 'регион', 'србиј']
+
+    # Coefficients
+    RATIO_INFECTED_COEFF = 1E3
+    RATIO_ISOLATED_COEFF = 1E3
+    RATIO_INFECTED_ISOLATED_COEFF = 1E2
 
 
     @staticmethod
@@ -98,7 +115,7 @@ class DataMgr:
     @staticmethod
     def latin_to_cyrillic(text):
         """
-        Convert Latin letters to Serbian Cyrillic letters
+        Convert Latin letters to Serbian-Cyrillic letters
         """
         return cyrtranslit.to_cyrillic(text)
 
@@ -250,13 +267,13 @@ class DataMgr:
 
         # Transform
         infected_cases = data[data[cls.INFECTED].notna()]
-        data[cls.RATIO_INFECTED] = (infected_cases[cls.INFECTED] / infected_cases[cls.POPULATION]) * 1E3
+        data[cls.RATIO_INFECTED] = (infected_cases[cls.INFECTED] / infected_cases[cls.POPULATION]) * cls.RATIO_INFECTED_COEFF
 
         isolated_cases = data[data[cls.ISOLATED].notna()]
-        data[cls.RATIO_ISOLATED] = (isolated_cases[cls.ISOLATED] / isolated_cases[cls.POPULATION]) * 1E3
+        data[cls.RATIO_ISOLATED] = (isolated_cases[cls.ISOLATED] / isolated_cases[cls.POPULATION]) * cls.RATIO_ISOLATED_COEFF
 
         both_cases = data[data[cls.INFECTED].notna() & data[cls.ISOLATED].notna()]
-        data[cls.RATIO_INFECTED_ISOLATED] = (both_cases[cls.INFECTED] / both_cases[cls.ISOLATED]) * 1E2
+        data[cls.RATIO_INFECTED_ISOLATED] = (both_cases[cls.INFECTED] / both_cases[cls.ISOLATED]) * cls.RATIO_INFECTED_ISOLATED_COEFF
 
         data = data.set_index(cls.DATE).sort_index()
         cls.describe_data(data, info)
@@ -273,11 +290,7 @@ class DataMgr:
         return serbia
 
 
-def main():
-    data = DataMgr.load_build_data(info=True)
-    print(data)
-
-
 if __name__ == "__main__": 
-    main()
+    data = DataMngr.load_build_data(info=True)
+    print(data)
 

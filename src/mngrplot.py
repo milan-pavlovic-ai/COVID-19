@@ -9,42 +9,45 @@ import matplotlib.colors as mcolors
 import matplotlib.animation as animation
 import seaborn as sns
 
-from datamgr import DataMgr
-from chart import BarhChart, MapChart
+from mngrdata import DataMngr
+from chartbarh import BarhChart
+from chartmap import MapChart
 
 
-class PlotMgr:
+class PlotMngr:
     """
     Plotting data
     """
     def __init__(self):
-        self.data = DataMgr.load_build_data(info=False)
+        self.data = DataMngr.load_build_data(info=False)
         self.chart = None
 
 
-    def barh_plot(self, top, target_col, anim, day, title, xlabel, bar_color, ratio, stable, plot_name, save):
+    def barh_plot(self, top, target_col, anim, day, title, xlabel, ratio, stable, plot_name, save):
         """
         General function for plotting horizontal bar chart for target column by cities/municipalities
         """
         # Set target data
         target_data = self.data[self.data[target_col].notna()]
-        target_data = target_data.sort_values(target_col, ascending=True).groupby(DataMgr.DATE).tail(top)
+        target_data = target_data.sort_values(target_col, ascending=True, kind='mergesort').groupby(DataMngr.DATE).tail(top)
         
         # Create chart
-        self.chart = BarhChart(title, xlabel, ratio, bar_color, stable)
+        self.chart = BarhChart(title, xlabel, ratio, stable, top)
         if stable:
             max_val = target_data[target_col].max()
             self.chart.set_xlim(0, max_val)
 
         # Draw plot
         if anim:
-            target_data = target_data.groupby(DataMgr.DATE)
+            target_data = target_data.groupby(DataMngr.DATE)
+            self.chart.set_frames(num_groups=len(target_data), date_frames=DataMngr.DAY_FRAMES_BARH)
             the_anim = animation.FuncAnimation(self.chart.fig, 
                                                 self.chart.draw_anim,
                                                 fargs=(target_data, target_col), 
-                                                frames=len(target_data), 
-                                                interval=1000, 
-                                                blit=False, 
+                                                init_func=self.chart.init_anim,
+                                                frames=self.chart.total_frames, 
+                                                interval=DataMngr.INTERVAL_BARH, 
+                                                blit=True, 
                                                 repeat=False)
             self.chart.anim = the_anim
         else:
@@ -69,15 +72,14 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.barh_plot(top=top,
-                        target_col=DataMgr.INFECTED, 
+                        target_col=DataMngr.INFECTED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_INFECTED,
-                        xlabel=DataMgr.XLABEL_INFECTED,
-                        bar_color='red',
+                        title=DataMngr.TITLE_INFECTED,
+                        xlabel=DataMngr.XLABEL_INFECTED,
                         ratio=False,
                         stable=stable,
-                        plot_name='Infected BarH Plot',
+                        plot_name='Confirmed BarH Plot',
                         save=save)
         return
 
@@ -92,15 +94,14 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.barh_plot(top=top, 
-                        target_col=DataMgr.RATIO_INFECTED, 
+                        target_col=DataMngr.RATIO_INFECTED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_RATIO_INFECTED,
-                        xlabel=DataMgr.XLABEL_RATIO_INFECTED,
-                        bar_color='orangered',
+                        title=DataMngr.TITLE_RATIO_INFECTED,
+                        xlabel=DataMngr.XLABEL_RATIO_INFECTED,
                         ratio=True,
                         stable=stable,
-                        plot_name='Infected-ratio BarH Plot',
+                        plot_name='Confirmed-ratio BarH Plot',
                         save=save)
         return
         
@@ -115,12 +116,11 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.barh_plot(top=top, 
-                        target_col=DataMgr.ISOLATED,
+                        target_col=DataMngr.ISOLATED,
                         anim=anim,
                         day=day, 
-                        title=DataMgr.TITLE_ISOLATED,
-                        xlabel=DataMgr.XLABEL_ISOLATED,
-                        bar_color='slateblue',
+                        title=DataMngr.TITLE_ISOLATED,
+                        xlabel=DataMngr.XLABEL_ISOLATED,
                         ratio=False,
                         stable=stable,
                         plot_name='Isolated BarH Plot',
@@ -138,12 +138,11 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.barh_plot(top=top, 
-                        target_col=DataMgr.RATIO_ISOLATED, 
+                        target_col=DataMngr.RATIO_ISOLATED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_RATIO_ISOLATED,
-                        xlabel=DataMgr.XLABEL_RATIO_ISOLATED,
-                        bar_color='dodgerblue',
+                        title=DataMngr.TITLE_RATIO_ISOLATED,
+                        xlabel=DataMngr.XLABEL_RATIO_ISOLATED,
                         ratio=True,
                         stable=stable,
                         plot_name='Isolated-ratio BarH Plot',
@@ -161,15 +160,14 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.barh_plot(top=top, 
-                        target_col=DataMgr.RATIO_INFECTED_ISOLATED, 
+                        target_col=DataMngr.RATIO_INFECTED_ISOLATED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_INFECTED_ISOLATED,
-                        xlabel=DataMgr.XLABEL_INFECTED_ISOLATED,
-                        bar_color='mediumpurple',
+                        title=DataMngr.TITLE_INFECTED_ISOLATED,
+                        xlabel=DataMngr.XLABEL_INFECTED_ISOLATED,
                         ratio=True,
                         stable=stable,
-                        plot_name='Infected-Isolated BarH Plot',
+                        plot_name='Confirmed-Isolated BarH Plot',
                         save=save)
         return 
 
@@ -180,10 +178,10 @@ class PlotMgr:
         """
         # Set target data
         target_data = self.data[self.data[target_col].notna()]
-        target_data = target_data.sort_values(target_col, ascending=True).groupby(DataMgr.DATE).tail(top)
+        target_data = target_data.sort_values(target_col, ascending=True, kind='mergesort').groupby(DataMngr.DATE).tail(top)
 
         # Create chart
-        self.chart = MapChart(title, xlabel, ratio, stable)
+        self.chart = MapChart(title, xlabel, ratio, stable, top)
         self.chart.setup_axes()
         if stable:
             minval = target_data[target_col].min()
@@ -193,15 +191,15 @@ class PlotMgr:
 
         # Draw plot
         if anim:
-            target_data = target_data.groupby(DataMgr.DATE)
-            print(target_data)
+            target_data = target_data.groupby(DataMngr.DATE)
+            self.chart.set_frames(num_groups=len(target_data), date_frames=DataMngr.DAY_FRAMES_MAP)
             the_anim = animation.FuncAnimation(self.chart.fig, 
                                                 self.chart.draw_anim,
-                                                fargs=(target_data, target_col, stable),
-                                                #init_func=self.chart.draw_map,  
-                                                frames=len(target_data), 
-                                                interval=1000, 
-                                                blit=False, 
+                                                fargs=(target_data, target_col),
+                                                init_func=self.chart.init_anim,  
+                                                frames=self.chart.total_frames, 
+                                                interval=DataMngr.INTERVAL_MAP, 
+                                                blit=True, 
                                                 repeat=False)
             self.chart.anim = the_anim
         else:
@@ -231,14 +229,14 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.map_bar_plot(top=top,
-                        target_col=DataMgr.INFECTED, 
+                        target_col=DataMngr.INFECTED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_INFECTED,
-                        xlabel=DataMgr.XLABEL_INFECTED,
+                        title=DataMngr.TITLE_INFECTED,
+                        xlabel=DataMngr.XLABEL_INFECTED,
                         ratio=False,
                         stable=stable,
-                        plot_name='Infected Map Plot',
+                        plot_name='Confirmed Map Plot',
                         save=save)
         return
 
@@ -253,14 +251,14 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.map_bar_plot(top=top,
-                        target_col=DataMgr.RATIO_INFECTED, 
+                        target_col=DataMngr.RATIO_INFECTED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_RATIO_INFECTED,
-                        xlabel=DataMgr.XLABEL_RATIO_INFECTED,
+                        title=DataMngr.TITLE_RATIO_INFECTED,
+                        xlabel=DataMngr.XLABEL_RATIO_INFECTED,
                         ratio=True,
                         stable=stable,
-                        plot_name='Infected-ratio Map Plot',
+                        plot_name='Confirmed-ratio Map Plot',
                         save=save)
         return
 
@@ -275,11 +273,11 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.map_bar_plot(top=top,
-                        target_col=DataMgr.ISOLATED, 
+                        target_col=DataMngr.ISOLATED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_ISOLATED,
-                        xlabel=DataMgr.XLABEL_ISOLATED,
+                        title=DataMngr.TITLE_ISOLATED,
+                        xlabel=DataMngr.XLABEL_ISOLATED,
                         ratio=False,
                         stable=stable,
                         plot_name='Isolated Map Plot',
@@ -297,61 +295,41 @@ class PlotMgr:
             save     - enable saving plot, otherwise just show results on screen
         """
         self.map_bar_plot(top=top,
-                        target_col=DataMgr.RATIO_ISOLATED, 
+                        target_col=DataMngr.RATIO_ISOLATED, 
                         anim=anim,
                         day=day,
-                        title=DataMgr.TITLE_RATIO_ISOLATED,
-                        xlabel=DataMgr.XLABEL_RATIO_ISOLATED,
+                        title=DataMngr.TITLE_RATIO_ISOLATED,
+                        xlabel=DataMngr.XLABEL_RATIO_ISOLATED,
                         ratio=True,
                         stable=stable,
                         plot_name='Isolated-ratio Map Plot',
                         save=save)
         return
 
-
-def main():
-
-    pltmgr = PlotMgr()
-
-    # Parameters
-    top = 20
-    anim = True
-    day = '2021-03-28'
-    stable = True
-    save = False
-
-    # Bars
-    pltmgr.infected_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-    pltmgr.ratio_infected_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-    pltmgr.isolated_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-    pltmgr.ratio_isolated_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-    pltmgr.infected_isolated_barh_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-
-    # Maps
-    pltmgr.infected_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-    pltmgr.ratio_infected_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-    pltmgr.isolated_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
-    pltmgr.ratio_isolated_map_plot(top=top, anim=anim, day=day, stable=stable, save=save)
+    def infected_isolated_map_plot(self, top, anim=True, day=None, stable=False, save=False):
+        """
+        Plotting map of Serbia with a bar chart on the relation between infected and self-isolated cases by cities/municipalities
+        Parameters:
+            top      - number of top cities/municipalities shown in results
+            anim     - enable animation
+            day      - show results for specific day (only for images)
+            stable   - enable fixed axis, for all frames axis maximum limit is the same
+            save     - enable saving plot, otherwise just show results on screen
+        """
+        self.map_bar_plot(top=top, 
+                        target_col=DataMngr.RATIO_INFECTED_ISOLATED, 
+                        anim=anim,
+                        day=day,
+                        title=DataMngr.TITLE_INFECTED_ISOLATED,
+                        xlabel=DataMngr.XLABEL_INFECTED_ISOLATED,
+                        ratio=True,
+                        stable=stable,
+                        plot_name='Confirmed-Isolated Map Plot',
+                        save=save)
+        return
 
 
 if __name__ == "__main__": 
-    main()
-
-
-# Testing
-''' 
-# Choosing color map
-cs = [(i, c) for i, c in enumerate(mpl.pyplot.colormaps())]
-for i, c in cs:
-    infected_map_plot(data, c, i)
-
-# Choosing color
-cs = [(i, c) for i, c in enumerate(mcolors.CSS4_COLORS) if i in [106]]
-for i, c in cs:
-    infected_map_plot(data, c, i)
-
-# Choosing style
-styles = [style for i, style in enumerate(plt.style.available)]
-for style in styles:
-    infected_map_plot(data, style)
-'''
+    pltmgr = PlotMngr()
+    pltmgr.infected_barh_plot(top=20, anim=True, day='2020-03-08', stable=True, save=False)
+    pltmgr.infected_map_plot(top=20, anim=True, day='2020-03-08', stable=False, save=False)
