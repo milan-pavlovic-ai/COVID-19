@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.animation as animation
 
+from matplotlib.ticker import MaxNLocator
 from mngrdata import DataMngr
 from chartbase import Chart
 
@@ -17,11 +18,12 @@ class BarhChart(Chart):
     Represents figure and style of horizontal bar chart
     """
 
+    LIMIT = 1E-5
     HEIGHT = 0.8
-    ALPHA = 0.8
+    ALPHA = 0.85
 
     def __init__(self, title, xlabel, ratio, stable, top):
-        super().__init__(title, xlabel, ratio, 'white', 'seaborn-darkgrid', stable, top, 0.7, \
+        super().__init__(title, xlabel, ratio, 'white', 'tableau-colorblind10', stable, top, 0.7, \
             DataMngr.WIDTH_BARH, DataMngr.HEIGHT_BARH, DataMngr.DPI_BARH)
         self.create_cmap()
         self.colors = None
@@ -36,14 +38,7 @@ class BarhChart(Chart):
         self.curr_sizes = None
         self.prev_pos = None
         self.curr_pos = None
-
-
-    def set_xlim(self, xmin, xmax):
-        """
-        Set limits for X-axis
-        """
-        xmax = xmax * 1.1 if self.ratio else max(int(xmax + 1), int(xmax * 1.1))
-        return super().set_xlim(xmin, xmax)
+        self.local_max = -1
 
     def create_cmap(self):
         """
@@ -59,16 +54,39 @@ class BarhChart(Chart):
         # Make horizontal bar plot
         y = data[DataMngr.CITY]
         width = data[target_col]
+        maxval = width.max()
         bars = self.axes.barh(y, width, color=self.cmap(np.arange(len(y)-1, -1, -1)), alpha=BarhChart.ALPHA)
 
+        # Set axes
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['bottom'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        self.axes.spines['left'].set_color('gray')
+        self.axes.set_facecolor('w')
+
+        self.axes.tick_params(axis='y', labelsize=8, color='gray')
+        self.axes.xaxis.set_ticks_position('top')
+        self.axes.xaxis.set_major_locator(MaxNLocator(5))
+        self.axes.tick_params(axis='x', labelsize=8, color='lightgray')
+        self.axes.grid(axis='x', which='major', linestyle='-', linewidth=0.5, zorder=0, color='gray', alpha=0.5)
+
         # Add date
-        day = DataMngr.date_to_str(data.index[0])
-        self.axes.text(0.95, 1.01, day, horizontalalignment='right', transform=self.axes.transAxes, fontsize=14)
+        day = data.index[0]
+        day_str = DataMngr.date_to_str(day)
+        self.axes.text(0.95, 0.1, day_str, ha='right', color='gray', transform=self.axes.transAxes, fontsize=45, alpha=BarhChart.ALPHA, \
+            bbox=dict(facecolor='w', edgecolor='w', boxstyle='round'))
+        
+        if day in self.the_news.index:
+            curr_news = self.the_news[day].split('.')
+            lines = '.\n'.join(curr_news).strip()
+            news_txt = '{}\n {}'.format(day_str, lines)
+            self.axes.text(0.45, 0.5, news_txt, ha='left', color='black', transform=self.axes.transAxes, fontsize=10, wrap=True, \
+                bbox=dict(facecolor='floralwhite', edgecolor='moccasin', boxstyle='round'))
 
         # Add value for each bar
         for bar in bars:
             y_pos = bar.get_y() + bar.get_height() / 2
-            x_pos = bar.get_width() * 1.01
+            x_pos = bar.get_width() + maxval / 200
             text = '{:.2f}'.format(bar.get_width()) if self.ratio else int(bar.get_width())
             self.axes.text(x_pos, y_pos, text, color='black', ha='left', va='center', fontsize=8)
         return
@@ -79,23 +97,38 @@ class BarhChart(Chart):
         Initialization of animation
         """
         # Set axes
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['bottom'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        self.axes.spines['left'].set_color('gray')
+        self.axes.set_facecolor('w')
+
         self.axes.set_ylim(0, self.top)
         self.axes.set_yticks(np.arange(BarhChart.HEIGHT/2, self.top, 1))
         self.axes.set_yticklabels([str(i) for i in np.arange(self.top, 0, -1)])
-        #self.axes.get_yaxis().set_visible(False)
+        self.axes.tick_params(axis='y', labelsize=8, color='gray')
+        self.axes.yaxis.label.set_color('gray')
 
+        self.axes.xaxis.set_ticks_position('top')
+        self.axes.xaxis.set_major_locator(MaxNLocator(5))
+        self.axes.tick_params(axis='x', labelsize=8, color='lightgray')
+        self.axes.grid(axis='x', which='major', linestyle='-', linewidth=0.5, zorder=0, color='gray', alpha=0.5)
+        
         # Data objects
         self.curr_pos = np.arange(0, self.top, 1, dtype=np.int64)
         self.curr_cities = np.array([''] * self.top)
         self.curr_sizes = np.array(([0] * self.top), dtype=np.float64)
-        self.colors = np.array(self.cmap.colors)
+        self.colors = np.array(self.cmap(np.arange(self.top-1, -1, -1)))
 
         # Artist objects
         self.bars = np.array(self.axes.barh(self.curr_pos, self.curr_sizes, align='edge', height=BarhChart.HEIGHT, alpha=BarhChart.ALPHA))
-        self.cities = np.array([self.axes.text(0, 0, '', horizontalalignment='left', verticalalignment='center') for bar in self.bars])
-        self.date = self.axes.text(0.95, 0.075, '', horizontalalignment='right', transform=self.axes.transAxes, fontsize=22, alpha=0.7)
+        self.cities = np.array([self.axes.text(0, 0, '', ha='left', va='center') for bar in self.bars])
+        self.date = self.axes.text(0.95, 0.1, '', ha='right', color='gray', transform=self.axes.transAxes, fontsize=45, alpha=BarhChart.ALPHA, \
+            bbox=dict(facecolor='w', edgecolor='w', boxstyle='round'))
+        self.news = self.axes.text(0.45, 0.5, '', ha='left', color='black', transform=self.axes.transAxes, fontsize=10, wrap=True, \
+            bbox=dict(facecolor='floralwhite', edgecolor='moccasin', boxstyle='round'))
 
-        changed = [bar for bar in self.bars] + [city for city in self.cities] + [self.date]
+        changed = [bar for bar in self.bars] + [city for city in self.cities] + [self.date] + [self.news]
         return changed
 
     def calc_positions_change(self, prev_cities, curr_cities):
@@ -146,16 +179,21 @@ class BarhChart(Chart):
             bar.set_color(exist_colors[i])
 
             y_txt = y + bar.get_height() / 2.0
-            x_txt = w * 1.01
+            x_txt = w + (self.xmax / 200 if self.stable else self.local_max / 200)
             city_name = exist_cities_names[i]
             val = '{:.2f}'.format(w) if self.ratio else str(int(round(w, 0)))
             city = exist_cities_txt[i]
             city.set_text(city_name + '\n' + val)
             city.set_x(x_txt)
             city.set_y(y_txt)
-            if abs(w) < 1E-5: 
+            
+            if abs(w) < BarhChart.LIMIT: 
                 city.set_text('')
                 bar.set_color(None)
+
+            if not self.stable and self.local_max < w:
+                self.local_max = w
+                self.set_xlim(0, self.local_max)
 
         # Clean possible decimal errors
         if i_frame == self.date_frames - 1:
@@ -197,7 +235,7 @@ class BarhChart(Chart):
             bar.set_color(old_colors[i])
 
             y_txt = y + bar.get_height() / 2.0
-            x_txt = bar.get_width() * 1.01
+            x_txt = bar.get_width() + (self.xmax / 200 if self.stable else self.local_max / 200)
             city_name = old_cities_names[i] 
             prev_val = self.prev_sizes[old_pos][i]
             val = '{:.2f}'.format(prev_val) if self.ratio else str(int(prev_val))
@@ -205,7 +243,8 @@ class BarhChart(Chart):
             city.set_text(city_name + '\n' + val)
             city.set_x(x_txt)
             city.set_y(y_txt)
-            if abs(prev_val) < 1E-5: 
+
+            if abs(prev_val) < BarhChart.LIMIT: 
                 city.set_text('')
                 bar.set_color(None)
 
@@ -248,16 +287,21 @@ class BarhChart(Chart):
             bar.set_color(new_colors[i])
 
             y_txt = y + bar.get_height() / 2.0
-            x_txt = bar.get_width() * 1.01
+            x_txt = bar.get_width() + (self.xmax / 200 if self.stable else self.local_max / 200)
             city_name = new_cities_names[i]
             val = '{:.2f}'.format(w) if self.ratio else str(int(round(w, 0)))
             city = new_cities_txt[i]
             city.set_text(city_name + '\n' + val)
             city.set_x(x_txt)
             city.set_y(y_txt)
-            if abs(w) < 1E-5: 
+
+            if abs(w) < BarhChart.LIMIT: 
                 city.set_text('')
                 bar.set_color(None)
+            
+            if not self.stable and self.local_max < w:
+                self.local_max = w
+                self.set_xlim(0, self.local_max)
 
         # Clean possible decimal errors
         if i_frame == self.date_frames - 1:
@@ -314,23 +358,36 @@ class BarhChart(Chart):
             day_str = DataMngr.date_to_str(day)
             self.date.set_text(day_str)
 
+            if day in self.the_news.index:
+                curr_news = self.the_news[day].split('.')
+                lines = '.\n'.join(curr_news).strip()
+                news_txt = '{}\n {}'.format(day_str, lines)
+                self.news.set_text(news_txt)
+                self.duration = Chart.NEWS_TIME
+            elif self.duration == 0:
+                self.news.set_text('')
+                self.duration = Chart.NEWS_TIME
+            else:
+                self.duration -= 1
+
             # Info
             print(day_str)
             for i, city in enumerate(zip(reversed(self.curr_cities), reversed(self.curr_sizes))):
                 print(self.top - 1 - i, city)
             print()
 
-            # Update axes for new day
-            if not self.stable:
+            # Update axes for first day
+            if not self.stable and i_frame == 0:
                 maxval = data[target_col].max()
-                self.set_xlim(0, maxval)
-                self.fig.canvas.draw()
-                self.fig.canvas.flush_events()
+                self.local_max = maxval
+                self.set_xlim(0, self.local_max)
 
         # Update 
         pos_changed = self.update_positions(i_frame)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
-        changed = pos_changed + [self.date]
+        changed = pos_changed + [self.date] + [self.news]
         return changed
 
 

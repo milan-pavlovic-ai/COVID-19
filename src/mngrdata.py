@@ -49,6 +49,7 @@ class DataMngr:
     POPUL_FILENAME = config.get(FILE, 'POPUL_FILENAME')
     MAP_FILENAME = config.get(FILE, 'MAP_FILENAME')
     LOGO_FILENAME = config.get(FILE, 'LOGO_FILENAME')
+    NEWS_FILENAME = config.get(FILE, 'NEWS_FILENAME')
 
     # Labels
     lang_url = os.path.join(CONFIG_DIR, 'lang.ini')
@@ -288,6 +289,19 @@ class DataMngr:
         url_map = os.path.join(cls.MAP_DIR, cls.MAP_FILENAME)
         serbia = gpd.read_file(url_map)
         return serbia
+
+    
+    @classmethod
+    def load_news(cls, info=False):
+        """
+        Loading the News, textual information about COVID-19
+        """
+        url_news = os.path.join(cls.DATAIN_DIR, cls.NEWS_FILENAME)
+        news = pd.read_excel(url_news, header=0)
+        news['date'] = pd.to_datetime(news['date'])
+        news = news.set_index('date')[cls.LANG]
+        cls.describe_data(news, info)
+        return news
 
 
 if __name__ == "__main__": 

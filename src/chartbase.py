@@ -17,8 +17,9 @@ class Chart:
     Represents figure and style of chart
     """
 
-    LOGO_X = 100
-    LOGO_Y = 100
+    LOGO_X = 50
+    LOGO_Y = 50
+    NEWS_TIME = 2
 
     def __init__(self, title, xlabel, ratio, bgcolor, style, stable, top, logo_alpha, width, height, dpi):
         # Labels and style
@@ -48,6 +49,10 @@ class Chart:
         self.fig = self.create()
         self.axes = self.fig.gca()
         self.anim = None
+
+        # Data
+        self.the_news = DataMngr.load_news()
+        self.duration = Chart.NEWS_TIME
         
     def create(self):
         """
@@ -56,7 +61,7 @@ class Chart:
         plt.style.use(self.style) 
         fig = plt.figure(figsize=(self.width, self.height), dpi=self.dpi, facecolor=self.bgcolor)
         axes = fig.gca()
-        axes.set_title(self.title)
+        axes.set_title(self.title, pad=0)
         axes.set_xlabel(self.xlabel)
         return fig
 

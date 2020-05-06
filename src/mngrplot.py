@@ -159,6 +159,7 @@ class PlotMngr:
             stable   - enable fixed axis, for all frames axis maximum limit is the same
             save     - enable saving plot, otherwise just show results on screen
         """
+        self.data[DataMngr.RATIO_INFECTED_ISOLATED] = self.data[DataMngr.RATIO_INFECTED_ISOLATED].replace([np.inf, -np.inf], np.nan)
         self.barh_plot(top=top, 
                         target_col=DataMngr.RATIO_INFECTED_ISOLATED, 
                         anim=anim,
@@ -316,6 +317,7 @@ class PlotMngr:
             stable   - enable fixed axis, for all frames axis maximum limit is the same
             save     - enable saving plot, otherwise just show results on screen
         """
+        self.data[DataMngr.RATIO_INFECTED_ISOLATED] = self.data[DataMngr.RATIO_INFECTED_ISOLATED].replace([np.inf, -np.inf], np.nan)
         self.map_bar_plot(top=top, 
                         target_col=DataMngr.RATIO_INFECTED_ISOLATED, 
                         anim=anim,

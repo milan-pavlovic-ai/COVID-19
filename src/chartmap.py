@@ -19,7 +19,7 @@ class MapChart(Chart):
     THRESHOLD = 1E-5
     ALPHA = 0.9
     LINE_ALIGN = 0.07
-    TEXT_ALIGN = 0.07
+    TEXT_ALIGN = 0.08
     BAR_WIDTH = 0.1
 
     def __init__(self, title, xlabel, ratio, stable, top):
@@ -120,6 +120,8 @@ class MapChart(Chart):
         """
         Create color map
         """
+        if not self.ratio and maxval < 10:
+            maxval = 9
         self.cmap = mpl.colors.ListedColormap(['lightblue', 'dodgerblue', 'lightgreen', 'green', 'yellow', 'orange', 'red', 'darkred', 'indigo'])
         bounds = np.linspace(0, maxval, self.cmap.N+1)
         self.bounds = bounds if self.ratio else [int(x) for x in bounds]
@@ -132,8 +134,8 @@ class MapChart(Chart):
         """
         self.axes1.cla()
         num_format = '%.2f' if self.ratio else '%d'
-        self.cbar = mpl.colorbar.ColorbarBase(self.axes1, cmap=self.cmap, norm=self.norm, ticks=self.bounds, boundaries=self.bounds, 
-            spacing='proportional', orientation='vertical', format=num_format, drawedges=False)
+        self.cbar = mpl.colorbar.ColorbarBase(self.axes1, cmap=self.cmap, norm=self.norm, ticks=self.bounds, boundaries=self.bounds, \
+            orientation='vertical', format=num_format, drawedges=False)
         self.cbar.outline.set_visible(False)
         self.cbar.ax.set_title(self.xlabel, fontsize=10, y=-MapChart.TEXT_ALIGN, alpha=MapChart.ALPHA)
         return
@@ -167,8 +169,15 @@ class MapChart(Chart):
         Plotting all cities/municipalities from data on given axes
         """
         # Add date
-        day_str = DataMngr.date_to_str(data.index[0])
-        self.axes.text(0.8, 0.85, day_str, horizontalalignment='right', transform=self.axes.transAxes, fontsize=14)
+        day = data.index[0]
+        day_str = DataMngr.date_to_str(day)
+        self.axes.text(0.96, 0.85, day_str, ha='right', transform=self.axes.transAxes, fontsize=32, alpha=0.5)
+        if day in self.the_news.index:
+            curr_news = self.the_news[day].split('.')
+            lines = '.\n'.join(curr_news).strip()
+            news_txt = '{}\n {}'.format(day_str, lines)
+            self.axes.text(0, -0.06, news_txt, ha='left', color='black', transform=self.axes.transAxes, fontsize=10, wrap=True, \
+                bbox=dict(facecolor='floralwhite', edgecolor='moccasin', boxstyle='round'))
 
         # Make vertical bar plot for each city
         max_city = data[target_col].max()
@@ -213,10 +222,12 @@ class MapChart(Chart):
             [self.axes.text(x, y - MapChart.TEXT_ALIGN, '', ha='center', color='black', fontsize=8, alpha=MapChart.ALPHA) \
                 for x, y in zip(self.curr_xs, self.curr_ys)])
         
-        self.date = self.axes.text(0.8, 0.9, '', horizontalalignment='right', transform=self.axes.transAxes, fontsize=20, alpha=0.6)
+        self.date = self.axes.text(0.96, 0.85, '', ha='right', transform=self.axes.transAxes, fontsize=32, alpha=0.5)
+        self.news = self.axes.text(0, -0.06, '', ha='left', color='black', transform=self.axes.transAxes, fontsize=10, wrap=True, \
+            bbox=dict(facecolor='floralwhite', edgecolor='moccasin', boxstyle='round'))
         self.create_cbar()
 
-        changed = [bar for bar in self.bars] + [line for line in self.lines] + [city for city in self.cities] + [self.date]
+        changed = [bar for bar in self.bars] + [line for line in self.lines] + [city for city in self.cities] + [self.date] + [self.news]
         return changed
 
     def update_existing_cities(self, i_frame):
@@ -243,6 +254,11 @@ class MapChart(Chart):
 
         for i, (bar, line, city_txt) in enumerate(zip(exist_bars, exist_lines, exist_cities_txt)):
             height = heights[i]
+
+            if not self.stable and self.localmax < height:
+                self.localmax = height
+                self.create_cmap(self.localmax)
+                self.create_cbar()
 
             color = self.get_color(height)
             bar.set_color(color)
@@ -297,6 +313,12 @@ class MapChart(Chart):
             bar.set_y(y)
 
             height = heights[i]
+
+            if not self.stable and self.localmax < height:
+                self.localmax = height
+                self.create_cmap(self.localmax)
+                self.create_cbar()
+
             color = self.get_color(height)
             bar.set_color(color)
             val_norm = self.normalize(height)
@@ -439,26 +461,38 @@ class MapChart(Chart):
             day_str = DataMngr.date_to_str(day)
             self.date.set_text(day_str)
 
+            if day in self.the_news.index:
+                curr_news = self.the_news[day].split('.')
+                lines = '.\n'.join(curr_news).strip()
+                news_txt = '{}\n {}'.format(day_str, lines)
+                self.news.set_text(news_txt)
+                self.duration = Chart.NEWS_TIME
+            elif self.duration == 0:
+                self.news.set_text('')
+                self.duration = Chart.NEWS_TIME
+            else:
+                self.duration -= 1
+
             # Info
             print(day_str)
             for i, city in enumerate(zip(self.curr_cities, self.curr_sizes)):
                 print(i, city)
             print()
 
-            # Update axes for new day
-            if not self.stable:
+            # Update axes for first day
+            if not self.stable and i_frame == 0:
                 minval = data[target_col].min()
                 maxval = data[target_col].max()
                 self.set_local_extremes(minval, maxval)
                 self.create_cmap(maxval)
                 self.create_cbar()
-                self.fig.canvas.draw()
-                self.fig.canvas.flush_events()
 
         # Update 
         val_changed = self.update_values(i_frame)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
-        changed = val_changed + [self.date]
+        changed = val_changed + [self.date] + [self.news]
         return changed
 
 

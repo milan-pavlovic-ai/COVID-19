@@ -1,14 +1,18 @@
 # COVID-19
-Visualization of COVID-19 confirmed and self-isolated cases by municipalities/cities in Serbia
+Visualization of COVID-19 confirmed and self-isolated cases by municipalities/cities in Serbia.
+
+Implementation of algorithm bar-chart-race with local and global viewpoints. 
 
 ## Date, Region and Domain
-* April 24, 2020
+* May 4, 2020
 * Serbia
 * Health
       
 ## Research Questions
-1. Which are the top municipalities/cities in Serbia with the highest COVID-19 confirmed cases overall and to population ratio?
-1. Which are the top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases overall and to population ratio?
+1. Which are the top municipalities/cities in Serbia with the highest total COVID-19 confirmed cases?
+1. Which are the top municipalities/cities in Serbia with the highest COVID-19 confirmed cases to population ratio?
+1. Which are the top municipalities/cities in Serbia with the highest total COVID-19 self-isolated cases?
+1. Which are the top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases to population ratio?
 
 ## Data Sources
 * Population estimates by municipalities/cities 2018
@@ -21,33 +25,35 @@ Visualization of COVID-19 confirmed and self-isolated cases by municipalities/ci
     * https://simplemaps.com/data/rs-cities
 * Map of Serbia
     * http://alas.matf.bg.ac.rs/~mi09109/sr_kos_regional.html
+* News in Serbia
+    * https://sr.wikipedia.org/wiki/Пандемија_вируса_корона_у_Србији_2020.
 
 ## Visualization
 ### Map chart
-1. Top municipalities/cities in Serbia with the highest COVID-19 confirmed cases
-    * https://streamable.com/e2xh1f
+1. Top municipalities/cities in Serbia with the highest total COVID-19 confirmed cases
+    * https://youtu.be/VFxMH-yaiVA
 1. Top municipalities/cities in Serbia with the highest COVID-19 confirmed cases to population ratio
-    * https://streamable.com/nnftnr
-1. Top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases
-    * https://streamable.com/gh6ng6
+    * https://youtu.be/5cGeN5OKGFY
+1. Top municipalities/cities in Serbia with the highest total COVID-19 self-isolated cases
+    * https://youtu.be/4nJBIBfBIWc
 1. Top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases to population ratio
-    * https://streamable.com/c6gvl8
+    * https://youtu.be/d8tXrhAeKf8
 
 ### Bar chart race
-1. Top municipalities/cities in Serbia with the highest COVID-19 confirmed cases
-    * https://streamable.com/n8jbsi
+1. Top municipalities/cities in Serbia with the highest total COVID-19 confirmed cases
+    * https://youtu.be/XTsFuy-O0Kk
 1. Top municipalities/cities in Serbia with the highest COVID-19 confirmed cases to population ratio
-    * https://streamable.com/bjd3qk
-1. Top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases
-    * https://streamable.com/wyy05m
+    * https://youtu.be/LRioosJCZtg
+1. Top municipalities/cities in Serbia with the highest total COVID-19 self-isolated cases
+    * https://youtu.be/tSb4OF9WZt8
 1. Top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases to population ratio
-    * https://streamable.com/7m5wx6
+    * https://youtu.be/B8vzNp_KmfU
 
 ## Technology
-The implementation of the bar chart race algorithm is based on monitoring the position of each bar and its value in every frame.
+The implementation of the bar-chart-race algorithm is based on monitoring the position of each bar and its value in every frame.
 The smooth transition between two adjacent days is made possible by assigning the appropriate number of frames to the transition calculation. Where each frame corresponds to one step by how much the bar value and its position are increased/decreased.
 
-The map of Serbia was imported from a JSON file using the geopanda library, the map is actually a large polygon. Geographical coordinates were used (latitude and longitude) to be able to present the real position of municipalities/cities on the map.
+The map of Serbia was imported from a JSON file using the geopandas library, the map is actually a large polygon. Geographical coordinates were used (latitude and longitude) to be able to present the real position of municipalities/cities on the map.
 
 * Libraries
     * numpy
@@ -63,7 +69,7 @@ The goal of visualization is to answer the research questions. Data visualizatio
 
 The municipality/city population data represent the population estimate for 2018 according to the Statistical Office of the Republic of Serbia. Due to the unavailability of accurate and complete data, the province of Kosovo and Metohija was omitted. Data on infected cases of coronavirus were downloaded from the website of the Government of the Republic of Serbia with the original source of the Institute of Public Health of Serbia "Milan Jovanovic Batut", while the number of self-isolated cases was taken from the website of the Government of the Republic of Serbia with the original source of the Ministry of Interior of the Republic of Serbia.
 
-The observation period is from the first recorded positive case at 06.03 until 23.04. There are missing data on confirmed cases in the period 30.03-07.04 and 08.04-15.04 from used source.
+The observation period on confirmed cases is from the first recorded positive case at 06.03 until 04.05. There are missing data on confirmed cases in the period 30.03-07.04 and 08.04-15.04 from used source. Notice that the visualization used the total number of recorded confirmed cases, regardless of whether the counted cases were cured at some point or unfortunately not alive anymore. The observation period on self-isolated cases is from 24.03. to 04.05.
 
 ### At day 23.04.2020
 On 23.04.2020 we have 2 cities that have more than 1000 COVID-19 confirmed cases. Belgrade has 1910 cases, making it the city with the highest number of confirmed cases, followed by Niš with 1038,
@@ -79,10 +85,10 @@ In the case of top municipalities/cities with the highest COVID-19 self-isolated
 
 ### Over period
 Looking at the data over the observed period, we can see that from the first days Belgrade and Niš were dominant in the number of confirmed cases, from 15.03. Valjevo occurs and from 19.03. Ćuprija.
-The mentioned 4 municipalities/cities are absolutely leading until 29.03., as well as in the period from 15.04.-23.04., where they are joined by Kruševac and Leskovac.
+The mentioned 4 municipalities/cities are absolutely leading until 29.03., as well as in the period from 15.04. to 04.05., where they are joined by Kruševac and Leskovac.
 
 As of 15.04. most of the leading municipalities/cities of confirmed cases in terms of population are in southeastern Serbia.
 
-Belgrade, Lozinica, Novi Sad and Niš are leading in the number of self-isolated cases which are generally increasing from the first days to 11.04 when the number of cases starts dramatically falling to 18.04 when numbers become mostly static.
+Belgrade, Lozinica, Novi Sad and Niš are leading in the number of self-isolated cases which are generally increasing from the first days to 11.04 when the number of cases starts dramatically falling to 18.04 when numbers become mostly static. The number of cases continues to falling from 26.04.
 
 Mostly from day one, we can see that the leading municipalities/cities in terms of self-isolated cases in terms of population are close the western and southern borders of Serbia until 11.04. when we have a dramatic decline in the number of self-isolated cases. As of 16.04., most of the leading municipalities/cities are located in Southeastern Serbia.
