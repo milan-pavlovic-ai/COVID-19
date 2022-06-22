@@ -12,7 +12,7 @@ kiwisolver==1.2.0
 matplotlib==3.2.1
 missingno==0.4.2
 munch==2.5.0
-numpy==1.18.2
+numpy==1.22.0
 opencv-python==4.2.0.34
 pandas==1.0.3
 pyparsing==2.4.7
