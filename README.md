@@ -29,15 +29,6 @@ Implementation of algorithm bar-chart-race with local and global viewpoints.
     * https://sr.wikipedia.org/wiki/Пандемија_вируса_корона_у_Србији_2020.
 
 ## Visualization
-### Map chart
-1. Top municipalities/cities in Serbia with the highest total COVID-19 confirmed cases
-    * https://youtu.be/VFxMH-yaiVA
-1. Top municipalities/cities in Serbia with the highest COVID-19 confirmed cases to population ratio
-    * https://youtu.be/5cGeN5OKGFY
-1. Top municipalities/cities in Serbia with the highest total COVID-19 self-isolated cases
-    * https://youtu.be/4nJBIBfBIWc
-1. Top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases to population ratio
-    * https://youtu.be/d8tXrhAeKf8
 
 ### Bar chart race
 1. Top municipalities/cities in Serbia with the highest total COVID-19 confirmed cases
@@ -48,6 +39,16 @@ Implementation of algorithm bar-chart-race with local and global viewpoints.
     * https://youtu.be/tSb4OF9WZt8
 1. Top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases to population ratio
     * https://youtu.be/B8vzNp_KmfU
+
+### Map chart
+1. Top municipalities/cities in Serbia with the highest total COVID-19 confirmed cases
+    * https://youtu.be/VFxMH-yaiVA
+1. Top municipalities/cities in Serbia with the highest COVID-19 confirmed cases to population ratio
+    * https://youtu.be/5cGeN5OKGFY
+1. Top municipalities/cities in Serbia with the highest total COVID-19 self-isolated cases
+    * https://youtu.be/4nJBIBfBIWc
+1. Top municipalities/cities in Serbia with the highest COVID-19 self-isolated cases to population ratio
+    * https://youtu.be/d8tXrhAeKf8
 
 ## Technology
 The implementation of the bar-chart-race algorithm is based on monitoring the position of each bar and its value in every frame.
